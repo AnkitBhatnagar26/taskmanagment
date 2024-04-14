@@ -1,12 +1,20 @@
-import TaskManager from './components/TaskManager';
+import { NotificationContextProvider } from "./store/notification-context";
+import { LoaderContextProvider } from './store/loader-context';
+import { BrowserRouter } from 'react-router-dom';
+
+// routes
+import Router from "./routes";
 
 function App() {
   return (
     <div className="App">
-      <div className="bg-gray-100 p-4 mb-4">
-        <h1 className="text-2xl font-bold text-center">Welcome to Task Manager App</h1>
-      </div>
-      <TaskManager />
+      <BrowserRouter>
+        <NotificationContextProvider>
+          <LoaderContextProvider>
+            <Router />
+          </LoaderContextProvider>
+        </NotificationContextProvider>
+      </BrowserRouter>
     </div>
   );
 }

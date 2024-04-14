@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import toast from 'react-hot-toast';
 import { Task } from '../utils/interface';
 import TaskForm from './TaskForm';
 import TaskList from './TaskList';
