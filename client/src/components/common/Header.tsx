@@ -17,7 +17,7 @@ const Header = () => {
 
     const signOutHandler = () => {
         removeUserSession();
-        navigate('/');
+        navigate('/login');
     };
 
     return (

@@ -26,3 +26,10 @@ export const TASKS_API = {
     put: '/api/task',
     delete: '/api/task'
 }
+
+export const USERS_API = {
+    get: '/api/user',
+    post: '/api/user',
+    put: '/api/user',
+    delete: '/api/user'
+}

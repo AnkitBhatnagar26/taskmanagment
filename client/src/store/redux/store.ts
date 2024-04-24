@@ -1,9 +1,18 @@
-import { configureStore } from "@reduxjs/toolkit";
+import { configureStore, combineReducers } from "@reduxjs/toolkit";
 import authSliceReducer from "./authSlice";
+import { getToken } from "../../utils/common";
+
+const rootReducer = combineReducers({
+  auth: authSliceReducer,
+});
 
 export const store = configureStore({
-  reducer: {
-    auth: authSliceReducer,
+  reducer: rootReducer,
+  preloadedState: {
+    auth: {
+      auth_token: getToken(),
+      auth_role: "",
+    },
   },
 });
 

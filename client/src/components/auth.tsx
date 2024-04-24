@@ -29,7 +29,7 @@ const AuthForm: React.FC = () => {
     useEffect(() => {
         if (postSignInData) {
             dispatch(changeAuthToken({ value: postSignInData.token }));
-            // setUserSession(postSignInData.token, postSignInData.user || "");
+            setUserSession(postSignInData.token, postSignInData.user || "");
             navigate('/dashboard');
         }
     }, [postSignInData]);

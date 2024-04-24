@@ -1,11 +1,10 @@
 import React from "react";
-import { Link } from "react-router-dom";
-import {
-    BarChart,
-    Users
-} from 'lucide-react';
+import { Link, useLocation } from "react-router-dom";
+import { BarChart, Users } from 'lucide-react';
 
 const Sidebar = () => {
+    const location = useLocation();
+
     // Define sidebar items as an array of objects
     const sidebarItems = [
         {
@@ -16,7 +15,7 @@ const Sidebar = () => {
         {
             label: "Users",
             icon: <Users />,
-            link: "/users",
+            link: "/dashboard/users",
         },
         // Add more sidebar items as needed
     ];
@@ -32,7 +31,8 @@ const Sidebar = () => {
                                 <li key={index}>
                                     <Link
                                         to={item.link}
-                                        className="flex items-center p-2 text-base text-gray-900 rounded-lg hover:bg-gray-100 group"
+                                        className={`flex items-center p-2 text-base rounded-lg group ${location.pathname === item.link ? "bg-gray-100 text-gray-900" : "text-gray-600 hover:bg-gray-100"
+                                            }`}
                                     >
                                         {item.icon}
                                         <span className="ml-3">{item.label}</span>

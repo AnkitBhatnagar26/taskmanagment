@@ -117,10 +117,18 @@ function useFetch(url: string, options: FetchOptions, controlOptions: FetchContr
             console.log(response, 'responseresponse')
             if (!response.ok) {
                 if (response.status === 401) {
-                    notificationCtx.showNotification({
-                        title: "Unauthorized token",
-                        status: "error",
-                    });
+                    if (response.url.includes('/signIn')) {
+                        notificationCtx.showNotification({
+                            title: "Please check your credentials",
+                            status: "error",
+                        });
+                    } else {
+                        notificationCtx.showNotification({
+                            title: "Unauthorized token",
+                            status: "error",
+                        });
+                    }
+
                     loaderCtx.hideLoader();
                     setTimeout(() => {
                         navigate("/login");
