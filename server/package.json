@@ -30,6 +30,7 @@
     "bcryptjs": "^2.4.3",
     "btoa": "^1.2.1",
     "dotenv": "^10.0.0",
+    "express-session": "^1.18.0",
     "stripe": "^8.165.0"
   }
 }

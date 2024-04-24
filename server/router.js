@@ -2,7 +2,6 @@ const Authentication = require("./controllers/authentication");
 const passportService = require("./services/passport");
 const passport = require("passport");
 
-const requireSignin = passport.authenticate("local", { session: false });
 const requireAuth = passport.authenticate("jwt", { session: false });
 
 module.exports = (app) => {
@@ -12,7 +11,8 @@ module.exports = (app) => {
       msg: "Welcome to server!!!",
     });
   });
-  app.post("/signIn", requireSignin, Authentication.signIn);
+  app.post("/signIn", Authentication.signIn);
+
   app.post("/signUp", Authentication.signUp);
 
   app.post("/forgotPassword", Authentication.forgotPassword);

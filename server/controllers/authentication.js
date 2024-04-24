@@ -2,6 +2,9 @@ const jwt = require("jwt-simple");
 const User = require("../models/user");
 const jsonwebtoken = require("jsonwebtoken");
 const { SERVER_URL } = require("../constants");
+const passport = require("passport");
+
+const requireSignin = passport.authenticate("local");
 
 const tokenForUser = (user) => {
   const timestamp = new Date().getTime();
@@ -9,19 +12,17 @@ const tokenForUser = (user) => {
 };
 
 exports.signIn = (req, res, next) => {
-  console.log(req, "reqs");
-  User.findOne({ email: req.body.email }, (err, user) => {
+  passport.authenticate("local", (err, user, info) => {
     if (err) {
       return next(err);
     }
-
     if (!user) {
-      return res.status(400).send({ error: "User is not found!" });
+      return res.status(401).json({ message: info.message }); // Send custom message from Passport.js
     }
 
-    const token = tokenForUser(req.user);
-    res.send({ token, user: { email: user.email } });
-  });
+    const token = tokenForUser(user);
+    res.send({ token, user: { email: user.email, role: user.role } });
+  })(req, res, next);
 };
 
 exports.signUp = (req, res, next) => {
