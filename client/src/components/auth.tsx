@@ -1,11 +1,11 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { usePost } from "../hooks/useFetch";
-import { AUTH_API, POST } from '../api/config';
+import { AUTH_API, SIGN_IN, SIGN_UP } from '../api/config';
 import NotificationContext from '../store/notification-context';
 import { useNavigate } from 'react-router-dom';
 import { setUserSession } from '../utils/common';
-import LoaderContext from '../store/loader-context';
-import Loader from './common/loader';
+import { changeAuthToken } from '../store/redux/authSlice';
+import { useAppDispatch } from '../store/redux/hooks';
 
 type AuthMode = 'signIn' | 'signUp' | 'forgotPassword';
 type Role = 'admin' | 'user';
@@ -18,13 +18,21 @@ interface FormData {
 }
 
 const AuthForm: React.FC = () => {
-    const loaderCtx = useContext(LoaderContext);
     const [authMode, setAuthMode] = useState<AuthMode>('signIn');
     const [formData, setFormData] = useState<FormData>({ email: '', password: '', confirmPassword: '', role: 'user' });
-    const { refresh: postSignInData } = usePost(AUTH_API['signIn']);
-    const { refresh: postSignUpData } = usePost(AUTH_API['signUp']);
+    const { data: postSignInData, refresh: postSignInAPI } = usePost(AUTH_API[SIGN_IN]);
+    const { refresh: postSignUpData } = usePost(AUTH_API[SIGN_UP]);
     const notificationCtx = useContext(NotificationContext);
     const navigate = useNavigate();
+    const dispatch = useAppDispatch();
+
+    useEffect(() => {
+        if (postSignInData) {
+            dispatch(changeAuthToken({ value: postSignInData.token }));
+            // setUserSession(postSignInData.token, postSignInData.user || "");
+            navigate('/dashboard');
+        }
+    }, [postSignInData]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -35,11 +43,7 @@ const AuthForm: React.FC = () => {
         e.preventDefault();
         // Sign In logic here
         if (authMode === 'signIn') {
-            console.log('Sign In Data:', formData);
-            postSignInData({ data: { email: formData.email, password: formData.password } }).then((response) => {
-                setUserSession((response as any).token, { user: formData.email });
-                navigate('/dashboard/taskManager');
-            });
+            postSignInAPI({ data: { email: formData.email, password: formData.password } });
 
         } else if (authMode === 'signUp') {
             if (formData.password !== formData.confirmPassword) {
@@ -49,7 +53,6 @@ const AuthForm: React.FC = () => {
                 });
                 return;
             }
-            console.log('Sign Up Data:', formData);
             postSignUpData({ data: formData });
             // Sign Up logic here
         } else {

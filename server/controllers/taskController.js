@@ -14,11 +14,10 @@ class TaskController {
       task
         .find({})
         .then((data) => {
-          console.log("DATA: ", data);
           if (data.length == 0) {
             resolve({
-              code: 204,
-              msg: "No Tasks found!!!",
+              code: 200,
+              result: [],
             });
           } else {
             resolve({
@@ -60,7 +59,7 @@ class TaskController {
           .then((data) => {
             resolve({
               code: 200,
-              result: data,
+              result: "Task has been added successfully",
             });
           })
           .catch((err) => {
@@ -80,7 +79,7 @@ class TaskController {
           code: 400,
           msg: "No data passed in request body!!!",
         });
-      } else if (!req.body.id) {
+      } else if (!req.body._id) {
         reject({
           code: 400,
           msg: "task id missing!!!",
@@ -96,21 +95,21 @@ class TaskController {
         if (Object.keys(temp).length > 0) {
           task
             .findOne({
-              _id: req.body.id,
+              _id: req.body._id,
             })
             .then((result) => {
               if (result != null) {
                 task
                   .update(
                     {
-                      _id: req.body.id,
+                      _id: req.body._id,
                     },
                     temp
                   )
                   .then(() => {
                     resolve({
                       code: 200,
-                      result: "Update Successful!!!",
+                      result: "Task has been update successfully",
                     });
                   })
                   .catch((err) => {
@@ -144,7 +143,7 @@ class TaskController {
 
   deleteTask(req) {
     return new Promise((resolve, reject) => {
-      if (!req.body.id) {
+      if (!req.body._id) {
         reject({
           code: 400,
           msg: "Id missing!!!",
@@ -152,13 +151,13 @@ class TaskController {
       } else {
         task
           .findOne({
-            _id: req.body.id,
+            _id: req.body._id,
           })
           .then((result) => {
             if (result != null) {
               task
                 .deleteOne({
-                  _id: req.body.id,
+                  _id: req.body._id,
                 })
                 .then(() => {
                   resolve({

@@ -2,31 +2,54 @@ import { useEffect, useReducer, useRef, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import NotificationContext from "../store/notification-context";
 import LoaderContext from "../store/loader-context";
+import { getToken } from "../utils/common";
+import { BASE_URL } from "../api/config";
 
-const BASE_URL = "http://localhost:8080";
+interface FetchOptions extends RequestInit {
+    body?: string;
+}
 
-const getToken = (): string | null => {
-    return sessionStorage.getItem("token");
+interface ApiData {
+    data?: Record<string, any>;
+    url?: string;
+}
+
+interface FunctionCalls {
+    [key: string]: () => void;
+}
+
+interface FetchControlOptions {
+    apiCall?: string;
+}
+
+type FetchState = {
+    error?: Error;
+    data?: any;
+    fetchRequest: boolean;
+    isLoading: boolean;
 };
 
-export function useGet<T>(url: string, fetchOptions?: RequestInit) {
-    return useFetch<T>(url, { method: "GET", ...(fetchOptions || {}) });
+type FetchAction =
+    | { type: "loading"; payload: boolean }
+    | { type: "fetched"; payload: any }
+    | { type: "error"; payload: Error };
+export function useGet(url: string, fetchOptions?: FetchOptions, controlOptions?: FetchControlOptions) {
+    return useFetch(url, { ...fetchOptions, method: "GET" }, controlOptions);
 }
 
-export function usePost<T>(url: string) {
-    return useFetch<T>(url, { method: "POST", resolve: undefined });
+export function usePost(url: string, fetchOptions?: FetchOptions, controlOptions?: FetchControlOptions) {
+    return useFetch(url, { ...fetchOptions, method: "POST" }, controlOptions);
 }
 
-export function usePut<T>(url: string) {
-    return useFetch<T>(url, { method: "PUT" });
+export function usePut(url: string, fetchOptions?: FetchOptions, controlOptions?: FetchControlOptions) {
+    return useFetch(url, { ...fetchOptions, method: "PUT" }, controlOptions);
 }
 
-export function useDelete<T>(url: string) {
-    return useFetch<T>(url, { method: "DELETE" });
+export function useDelete(url: string, fetchOptions?: FetchOptions, controlOptions?: FetchControlOptions) {
+    return useFetch(url, { ...fetchOptions, method: "DELETE" }, controlOptions);
 }
-
-function useFetch<T>(url: string, options: RequestInit & { resolve?: (data: T) => void }, { apiCall = "" }: { apiCall?: string } = {}) {
-    const cache = useRef<Record<string, T | undefined>>({});
+function useFetch(url: string, options: FetchOptions, controlOptions: FetchControlOptions = {}) {
+    const cache = useRef<Record<string, any>>({});
     const notificationCtx = useContext(NotificationContext);
     const loaderCtx = useContext(LoaderContext);
     const navigate = useNavigate();
@@ -34,29 +57,21 @@ function useFetch<T>(url: string, options: RequestInit & { resolve?: (data: T) =
     // Used to prevent state update if the component is unmounted
     const cancelRequest = useRef<boolean>(false);
 
-    interface State {
-        error?: Error;
-        data?: T;
-        fetchRequest: boolean;
-        isLoading: boolean;
-    }
-
-    const initialState: State = {
+    const initialState: FetchState = {
         error: undefined,
         data: undefined,
-        fetchRequest: apiCall === "onload" ? true : false,
-        isLoading: apiCall === "onload" ? true : false,
+        fetchRequest: controlOptions.apiCall === "onload",
+        isLoading: controlOptions.apiCall === "onload",
     };
 
-    // Keep state logic separated
-    const fetchReducer = (state: State, action: { type: string; payload?: any }): State => {
+    const fetchReducer = (state: FetchState, action: FetchAction): FetchState => {
         switch (action.type) {
             case "loading":
-                return { ...initialState, isLoading: action.payload };
+                return { ...state, isLoading: action.payload };
             case "fetched":
-                return { ...initialState, data: action.payload };
+                return { ...state, data: action.payload };
             case "error":
-                return { ...initialState, error: action.payload };
+                return { ...state, error: action.payload };
             default:
                 return state;
         }
@@ -64,15 +79,9 @@ function useFetch<T>(url: string, options: RequestInit & { resolve?: (data: T) =
 
     const [state, dispatch] = useReducer(fetchReducer, initialState);
 
-    const fetchData = async (apiData?: { data?: any; url?: string }, functionCalls?: Record<string, () => void>) => {
+    const fetchData = async (apiData?: ApiData, functionCalls?: FunctionCalls) => {
         dispatch({ type: "loading", payload: true });
         loaderCtx.showLoader();
-
-        // If a cache exists for this url, return it
-        if (cache.current[url]) {
-            dispatch({ type: "fetched", payload: cache.current[url] });
-            return;
-        }
 
         if (apiData) {
             if (apiData.data) {
@@ -82,40 +91,41 @@ function useFetch<T>(url: string, options: RequestInit & { resolve?: (data: T) =
                 url += apiData.url;
             }
         }
+
         try {
-            url = BASE_URL + url;
-            options = {
+            const fullUrl = BASE_URL + url;
+            const fetchOptions: RequestInit = {
                 ...options,
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `jwt ${getToken()}`,
                 },
             };
-
             let response;
             try {
-                response = await window.fetch(url, options);
-            } catch (err) {
-                const error = err as Error; // Type assertion to cast err as Error
+                response = await window.fetch(fullUrl, fetchOptions);
+            } catch (err: any) {
+                const errorMessage = err instanceof Error ? err.message : 'An error occurred';
                 notificationCtx.showNotification({
-                    title: error.message,
+                    title: errorMessage,
                     status: "error",
                 });
-                dispatch({ type: "error", payload: error });
+                dispatch({ type: "error", payload: err });
                 return;
             }
 
+            console.log(response, 'responseresponse')
             if (!response.ok) {
                 if (response.status === 401) {
                     notificationCtx.showNotification({
                         title: "Unauthorized token",
                         status: "error",
                     });
-                    setTimeout(() => {
-                        navigate("/");
-                        notificationCtx.hideNotification();
-                    }, 1000);
                     loaderCtx.hideLoader();
+                    setTimeout(() => {
+                        navigate("/login");
+                        // notificationCtx.hideNotification();
+                    }, 1000);
                     return;
                 } else {
                     notificationCtx.showNotification({
@@ -123,72 +133,56 @@ function useFetch<T>(url: string, options: RequestInit & { resolve?: (data: T) =
                         status: "error",
                     });
                     dispatch({ type: "error", payload: new Error(response.statusText) });
+                    loaderCtx.hideLoader();
                     return;
                 }
             }
 
-            const data = await response.json();
-            cache.current[url] = data as T;
-            if (cancelRequest.current) return;
 
-            if (typeof data === "object" && data.message && options.method !== "GET") {
-                const message = data.message as string;
+            const data = await response.json();
+            cache.current[fullUrl] = data;
+
+            if (cancelRequest.current) return;
+            if (data.response && fetchOptions.method !== "GET") {
                 notificationCtx.showNotification({
-                    title: message,
+                    title: data.response,
                     status: "success",
                 });
-                for (let func in functionCalls || {}) {
-                    functionCalls![func]();
+                for (let func in functionCalls) {
+                    functionCalls[func]();
                 }
             }
 
             dispatch({ type: "fetched", payload: data });
             dispatch({ type: "loading", payload: false });
             loaderCtx.hideLoader();
-
-            // Resolve the Promise if a resolve function is provided in the options
-            if (options.resolve) {
-                options.resolve(data as T);
-            }
         } catch (error) {
             if (cancelRequest.current) return;
             notificationCtx.showNotification({
-                title: error as string,
+                title: (error as Error).message,
                 status: "error",
             });
-            dispatch({ type: "error", payload: error });
+
+            dispatch({ type: "error", payload: error as Error });
             loaderCtx.hideLoader();
         }
     };
 
     useEffect(() => {
-        // Do nothing if the url is not given
         if (!url) return;
 
         cancelRequest.current = false;
 
         if (state.fetchRequest) fetchData();
 
-        // Use the cleanup function for avoiding a possibly...
-        // ...state update after the component was unmounted
         return () => {
             cancelRequest.current = true;
         };
     }, [url, state.fetchRequest]);
 
-    // const refresh = (apiData?: { data?: any; url?: string }, functionCalls?: Record<string, () => void>) => {
-    //     fetchData(apiData, functionCalls);
-    // };
-
-    // Add a resolve function to the options parameter
-    const refresh = (apiData?: { data?: any; url?: string }, functionCalls?: Record<string, () => void>) => {
-        return new Promise<T>((resolve, reject) => {
-            options.resolve = resolve;
-            // options.reject = reject;
-            fetchData(apiData, functionCalls);
-        });
+    const refresh = (apiData?: ApiData, functionCalls?: FunctionCalls) => {
+        fetchData(apiData, functionCalls);
     };
-
 
     return { ...state, refresh };
 }

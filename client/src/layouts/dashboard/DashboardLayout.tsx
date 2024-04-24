@@ -1,8 +1,10 @@
-import React, { useContext, useState, ReactNode } from "react";
+import React, { useContext } from "react";
 import { Outlet } from "react-router-dom";
 import NotificationContext from "../../store/notification-context";
 import Notification from "../../components/common/notification";
 import LoaderContext from "../../store/loader-context";
+import Header from "../../components/common/Header";
+import Sidebar from "../../components/common/Sidebar";
 
 const CircularProgress: React.FC = () => {
   return (
@@ -12,40 +14,25 @@ const CircularProgress: React.FC = () => {
   );
 };
 
-interface StyledRootProps {
-  children: ReactNode;
-}
-
-const StyledRoot: React.FC<StyledRootProps> = ({ children }) => (
-  <div className="flex min-h-screen overflow-hidden">{children}</div>
-);
-
-const Main: React.FC<StyledRootProps> = ({ children }) => (
-  <main className="flex-grow overflow-auto min-h-screen bg-gray-100 lg:pl-2 lg:pr-2">
-    {children}
-  </main>
-);
-
-const StyledDiv: React.FC<StyledRootProps> = ({ children }) => (
-  <div className="bg-white rounded-md p-4 md:p-8">{children}</div>
-);
-
 const DashboardLayout: React.FC = () => {
-  const [open, setOpen] = useState(true);
   const NotificationCtx = useContext(NotificationContext);
   const LoaderCtx = useContext(LoaderContext);
 
   const activeNotification = NotificationCtx.notification;
   const activeLoader = LoaderCtx.loader;
-  const Open = open;
 
   return (
-    <StyledRoot>
-      <Main>
-        <StyledDiv>
-          <Outlet />
-        </StyledDiv>
-      </Main>
+    <div>
+      <Header />
+      <div className="flex pt-16 overflow-hidden bg-gray-50">
+        <Sidebar />
+        <div className="fixed inset-0 z-10 bg-gray-900/50 hidden"></div>
+        <div className="relative w-full h-full overflow-y-auto bg-gray-50 lg:ml-64">
+          <main>
+            <Outlet />
+          </main>
+        </div>
+      </div>
 
       {activeNotification && (
         <Notification
@@ -59,8 +46,9 @@ const DashboardLayout: React.FC = () => {
           <CircularProgress />
         </div>
       )}
-    </StyledRoot>
-  );
+    </div>
+
+  )
 };
 
 export default DashboardLayout;

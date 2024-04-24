@@ -1,16 +1,37 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Task } from "../utils/interface";
+import { Button } from "./ui/Button";
 
-const TaskForm: React.FC<{ onSubmit: (task: Task) => void }> = ({ onSubmit }) => {
+interface TaskFormProps {
+    onSubmit: (task: Task) => void;
+    closeForm: () => void;
+    task?: Task;  // task is optional to support adding new tasks
+    formState: 'edit' | 'add';
+}
+
+const TaskForm: React.FC<TaskFormProps> = ({ onSubmit, formState, task, closeForm }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [status, setStatus] = useState<'To Do' | 'In Progress' | 'Done'>('To Do');
     const [titleError, setTitleError] = useState<string | null>(null); // State for title error message
     const [descriptionError, setDescriptionError] = useState<string | null>(null); // State for title error message
 
+    useEffect(() => {
+        // Check if there's a task and the form is in edit mode
+        if (task && formState === 'edit') {
+            setTitle(task.title);
+            setDescription(task.description);
+            setStatus(task.status);
+        }
+    }, [task, formState]);  // Dependency array to only re-run if task or formState changes
+
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        console.log(title, 'title')
+        if (title.trim() === '' && description.trim() === '') {
+            setTitleError('Title is required');
+            setDescriptionError('Description is required');
+            return;
+        }
         if (title.trim() === '') {
             setTitleError('Title is required');
             return;
@@ -21,18 +42,33 @@ const TaskForm: React.FC<{ onSubmit: (task: Task) => void }> = ({ onSubmit }) =>
         }
         setTitleError(null);
         setDescriptionError(null);
-        onSubmit({ id: Math.floor(Math.random() * 1000), title, description, status });
+
+        if (formState === 'add') {
+            onSubmit({ title, description, status }); // Send title, description, and status for adding a task
+        } else if (formState === 'edit' && task) {
+            onSubmit({ _id: task?._id, title, description, status }); // Send id, title, description, and status for updating a task
+        }
+        // setTitle('');
+        // setDescription('');
+        // setStatus('To Do');
+    };
+
+    const cancelHandler = () => {
         setTitle('');
         setDescription('');
-        setStatus('To Do');
+        setTitleError(null);
+        setDescriptionError(null);
+        closeForm();
     };
 
     return (
         <form
             onSubmit={handleSubmit}
-            className="p-4 border rounded-lg bg-white text-gray-900"
+            className="p-4 border rounded-lg bg-white text-gray-900 mb-6"
         >
-            <h2 className="text-lg font-bold mb-4 text-blue-500">Create Task</h2>
+            <h2 className="inline-flex items-center mb-6 text-sm font-bold uppercase text-lg">
+                {formState === 'add' ? 'Add Task' : 'Edit Task'}
+            </h2>
             <label className="block mb-2 text-sm">Title:</label>
             <input
                 type="text"
@@ -64,12 +100,11 @@ const TaskForm: React.FC<{ onSubmit: (task: Task) => void }> = ({ onSubmit }) =>
                 <option value="In Progress">In Progress</option>
                 <option value="Done">Done</option>
             </select>
-            <button
-                type="submit"
-                className="w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-                Add Task
-            </button>
+            <div className="flex justify-between">
+                <Button variant="outline" type="button" onClick={cancelHandler}>Cancel</Button>
+                {formState === 'add' && <Button type="submit">Add Task</Button>}
+                {formState === 'edit' && <Button type="submit">Update Task</Button>}
+            </div>
         </form>
     );
 };

@@ -1,3 +1,6 @@
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
 export const getUser = () => {
   const userStr = sessionStorage.getItem("user");
   if (userStr) return JSON.parse(userStr);
@@ -18,3 +21,7 @@ export const removeUserSession = () => {
   sessionStorage.removeItem("token");
   sessionStorage.removeItem("user");
 };
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}

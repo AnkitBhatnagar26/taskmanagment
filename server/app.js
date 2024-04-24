@@ -12,7 +12,6 @@ const cors = require("cors");
 
 let resHandler = require("./handlers/responseHandler");
 const router = require("./router");
-
 const port = normalizePort(process.env.PORT || "8080");
 
 //App Setup

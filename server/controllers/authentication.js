@@ -1,16 +1,27 @@
 const jwt = require("jwt-simple");
 const User = require("../models/user");
-const config = require("../config");
 const jsonwebtoken = require("jsonwebtoken");
 const { SERVER_URL } = require("../constants");
 
 const tokenForUser = (user) => {
   const timestamp = new Date().getTime();
-  return jwt.encode({ sub: user.id, iat: timestamp }, config.secret);
+  return jwt.encode({ sub: user._id, iat: timestamp }, process.env.JWT_SECRET);
 };
 
 exports.signIn = (req, res, next) => {
-  res.send({ token: tokenForUser(req.user) });
+  console.log(req, "reqs");
+  User.findOne({ email: req.body.email }, (err, user) => {
+    if (err) {
+      return next(err);
+    }
+
+    if (!user) {
+      return res.status(400).send({ error: "User is not found!" });
+    }
+
+    const token = tokenForUser(req.user);
+    res.send({ token, user: { email: user.email } });
+  });
 };
 
 exports.signUp = (req, res, next) => {

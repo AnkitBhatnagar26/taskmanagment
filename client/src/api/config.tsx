@@ -1,9 +1,11 @@
-export const BASE_URL = "http://13.232.137.152:3000/";
+export const BASE_URL = "http://localhost:8080";
 
 export const GET = "get";
 export const POST = "post";
 export const PUT = "put";
 export const DELETE = "delete";
+export const SIGN_IN = "signIn";
+export const SIGN_UP = "signUp";
 
 interface AuthApi {
     [key: string]: string;
@@ -17,3 +19,10 @@ export const AUTH_API: AuthApi = {
     signUp: "/signUp",
     forgotPassword: '/forgotpassword',
 };
+
+export const TASKS_API = {
+    get: '/api/task',
+    post: '/api/task',
+    put: '/api/task',
+    delete: '/api/task'
+}
